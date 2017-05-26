@@ -1,0 +1,19 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  database: aud_exchange_tracker_development
+
+test:
+  <<: *default
+  database: aud_exchange_tracker_test
+
+production:
+  <<: *default
+  database: aud_exchange_tracker_production
+  username: aud_exchange_tracker
+  password: <%= ENV['AUD_EXCHANGE_TRACKER_DATABASE_PASSWORD'] %>
+
