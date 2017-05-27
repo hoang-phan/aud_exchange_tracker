@@ -12,20 +12,28 @@ class TrackNotifyService
 
   private
 
-  def page_html
-    open('https://www.vietcombank.com.vn/exchangerates/')
-  end
-
   def amount
     @amount ||= Nokogiri::HTML(page_html).css('.rateTable tr:contains("AUST") td:nth-child(4)').text.gsub(',', '').to_f
   end
 
-  def latest_price
-    @latest_price ||= Price.order(created_at: :desc).first
-  end
-
   def latest_amount
     @latest_amount ||= latest_price&.amount.to_f
+  end
+
+  def full_message
+    "#{exchange_rate_message}#{highest_message}"
+  end
+
+  def notifier
+    Slack::Notifier.new(ENV['SLACK_HOOK'], username: ENV['SLACK_USER'], icon_url: ENV['SLACK_ICON'])
+  end
+
+  def page_html
+    open('https://www.vietcombank.com.vn/exchangerates/')
+  end
+
+  def latest_price
+    @latest_price ||= Price.order(created_at: :desc).first
   end
 
   def nearest_higher
@@ -37,7 +45,7 @@ class TrackNotifyService
   end
 
   def highest_in
-    @highest_in ||= distance_of_time_in_words(now, nearest_higher)
+    distance_of_time_in_words(now, nearest_higher)
   end
 
   def exchange_rate_message
@@ -45,14 +53,6 @@ class TrackNotifyService
   end
 
   def highest_message
-    ". Highest in #{highest_in}" if highest_in != 'about 1 hour'
-  end
-
-  def full_message
-    "#{exchange_rate_message}#{highest_message}"
-  end
-
-  def notifier
-    Slack::Notifier.new(ENV['SLACK_HOOK'], username: ENV['SLACK_USER'], icon_url: ENV['SLACK_ICON'])
+    ". Highest in #{highest_in}" if latest_amount < amount
   end
 end
